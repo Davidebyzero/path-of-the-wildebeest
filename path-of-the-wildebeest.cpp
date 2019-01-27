@@ -11,9 +11,10 @@ typedef unsigned int  Uint;
 
 #define countof(a) sizeof(a) / sizeof(a[0])
 
-const Uint64 maxPositions = 12950157910uLL; // make this bigger if you want to change the problem parameters and see what happens
+const Uint64 maxPositions = 13500000000uLL; /* temporary safety margin added */ // make this bigger if you want to change the problem parameters and see what happens
 Uchar *visited;
 int64 maxVisitedPos = 0;
+int64 maxExaminedPos = 0;
 
 #if 0
 // This is the function I came up with
@@ -73,6 +74,8 @@ int main(int argc, char *argv[])
         visited[pos >> 3] |= 1 << (pos & (8-1));
         if (maxVisitedPos < pos)
             maxVisitedPos = pos;
+        if (maxExaminedPos < pos)
+            maxExaminedPos = pos;
         int64 bestMove = LLONG_MAX;
         int64 bestMove_x;
         int64 bestMove_y;
@@ -84,9 +87,11 @@ int main(int argc, char *argv[])
             pos1 = coordToPos(x1, y1);
             if (pos1 >= maxPositions)
             {
-                printf("Reached position %lld (max visited: %lld); would go to %lld but this exceeds allocated array\n", pos+1, maxVisitedPos+1, pos1+1);
-                break;
+                printf("Reached position %lld (max visited: %lld); considering going to %lld but this exceeds allocated array\n", pos+1, maxVisitedPos+1, pos1+1);
+                goto out_of_memory;
             }
+            if (maxExaminedPos < pos1)
+                maxExaminedPos = pos1;
             if (bestMove > pos1 && (visited[pos1 >> 3] & (1 << (pos1 & (8-1)))) == 0)
             {
                 bestMove = pos1;
@@ -96,7 +101,7 @@ int main(int argc, char *argv[])
         }
         if (bestMove == LLONG_MAX)
         {
-            printf("Trapped at step %lld at position %lld (max visited: %lld)\n", numSteps, pos+1, maxVisitedPos+1);
+            printf("Trapped at step %lld at position %lld (max visited: %lld; max examined: %lld)\n", numSteps, pos+1, maxVisitedPos+1, maxExaminedPos+1);
             break;
         }
         pos = bestMove;
@@ -104,8 +109,9 @@ int main(int argc, char *argv[])
         y = bestMove_y;
     }
 
+out_of_memory:
     FILE *f = fopen("path-of-the-wildebeest.bin", "wb");
-    fwrite(visited, ((maxVisitedPos+1 - 1) >> 3) + 1, 1, f);
+    fwrite(visited, ((maxExaminedPos+1 - 1) >> 3) + 1, 1, f);
     fclose(f);
 
     free(visited);
