@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 
     int64 pos=0, x=0, y=0;
 
-    struct {int x; int y;} moves[] =
+    struct {char x; char y;} moves[] =
     {
         {-3,-1},
         {-3, 1},
