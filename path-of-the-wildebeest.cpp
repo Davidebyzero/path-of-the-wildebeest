@@ -10,33 +10,21 @@ typedef unsigned char Uchar;
 typedef unsigned int  Uint;
 
 #define countof(a) sizeof(a) / sizeof(a[0])
+#define max(a,b) (((a) > (b)) ? (a) : (b))
 
 const Uint64 maxPositions = 12951523532uLL; // make this bigger if you want to change the problem parameters and see what happens
 Uchar *visited;
 int64 maxVisitedPos = 0;
 int64 maxExaminedPos = 0;
 
-#if 0
-// This is the function I came up with
+// Adapted from the explanation on https://codegolf.stackexchange.com/a/179158
+// see also https://math.stackexchange.com/a/2639611/293996
 int64 coordToPos(int64 x, int64 y)
 {
-    int64 m = max(abs(x), abs(y));
-    int64 a = 2*m-1;
-    return a*a + (-y == m && x <= -y ? 3*m + 2*a + 1 + x
-                            : x == m ? m + y - 1
-                                     : 4*m - 1 - x - y);
+    int64 L = 2 * max(abs(x), abs(y));
+    int64 P = L + x + y;
+    return L*L + (x > y ? -P : P);
 }
-#else
-// This is a version adapted from https://math.stackexchange.com/a/2639611/293996; it is equivalent in function to mine
-int64 coordToPos(int64 x, int64 y)
-{
-    int64 A = abs(abs(y) - abs(x)) + abs(y) + abs(x);
-    int64 B = A + x - y;
-    if (x + y > 0)
-        B = -B;
-    return A*A + B;
-}
-#endif
 
 int main(int argc, char *argv[])
 {
