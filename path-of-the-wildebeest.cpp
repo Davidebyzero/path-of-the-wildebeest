@@ -11,7 +11,7 @@ typedef unsigned int  Uint;
 
 #define countof(a) sizeof(a) / sizeof(a[0])
 
-const Uint64 maxPositions = 13500000000uLL; /* temporary safety margin added */ // make this bigger if you want to change the problem parameters and see what happens
+const Uint64 maxPositions = 12951523532uLL; // make this bigger if you want to change the problem parameters and see what happens
 Uchar *visited;
 int64 maxVisitedPos = 0;
 int64 maxExaminedPos = 0;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 
 out_of_memory:
     FILE *f = fopen("path-of-the-wildebeest.bin", "wb");
-    fwrite(visited, ((maxExaminedPos+1 - 1) >> 3) + 1, 1, f);
+    fwrite(visited, ((maxVisitedPos+1 - 1) >> 3) + 1, 1, f);
     fclose(f);
 
     free(visited);
