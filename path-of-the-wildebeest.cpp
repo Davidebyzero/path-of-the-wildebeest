@@ -26,6 +26,28 @@ int64 coordToPos(int64 x, int64 y)
     return L*L + (x > y ? -P : P);
 }
 
+void writeVisitedToFile()
+{
+    FILE *f = fopen("path-of-the-wildebeest.bin", "wb");
+    size_t size = ((maxVisitedPos+1 - 1) >> 3) + 1;
+    Uchar *p = visited;
+    for (;;)
+    {
+        if (size > (1uLL << 31))
+        {
+            fwrite(p, 1uLL << 31, 1, f);
+            size   -= 1uLL << 31;
+            p      += 1uLL << 31;
+        }
+        else
+        {
+            fwrite(visited, size, 1, f);
+            break;
+        }
+    }
+    fclose(f);
+}
+
 int main(int argc, char *argv[])
 {
     fputs("Initializing...", stdout); fflush(stdout);
@@ -98,9 +120,7 @@ int main(int argc, char *argv[])
     }
 
 out_of_memory:
-    FILE *f = fopen("path-of-the-wildebeest.bin", "wb");
-    fwrite(visited, ((maxVisitedPos+1 - 1) >> 3) + 1, 1, f);
-    fclose(f);
+    writeVisitedToFile();
 
     free(visited);
     return 0;
