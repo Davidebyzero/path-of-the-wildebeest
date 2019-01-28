@@ -79,13 +79,13 @@ int main(int argc, char *argv[])
 
     for (Uint64 numSteps=1;; numSteps++)
     {
-        if ((numSteps & 0xFFFFF) == 0)
-            printf("Step %llu: Position %lld (max: %lld)\n", numSteps, pos+1, maxVisitedPos+1);
         visited[pos >> 3] |= 1 << (pos & (8-1));
         if (maxVisitedPos < pos)
             maxVisitedPos = pos;
         if (maxExaminedPos < pos)
             maxExaminedPos = pos;
+        if ((numSteps & 0xFFFFF) == 0)
+            printf("Step %llu: Position %lld (max: %lld)\n", numSteps, pos+1, maxVisitedPos+1);
         int64 bestMove = LLONG_MAX;
         int64 bestMove_x;
         int64 bestMove_y;
