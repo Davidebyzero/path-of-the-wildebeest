@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
             if (newVisitOffset >= visitedArraySize)
             {
                 printf("Reached position %lld (pruned to %lld; max previously visited: %lld); this exceeds allocated array\n", pos+1, visitedOffset << 3, maxVisitedPos+1);
-                goto out_of_memory;
+                break;
             }
         }
         visited[newVisitOffset] |= 1 << (pos & (8-1));
@@ -155,7 +155,6 @@ int main(int argc, char *argv[])
         y = bestMove_y;
     }
 
-out_of_memory:
     writeVisitedToFile();
 
     free(visited);
