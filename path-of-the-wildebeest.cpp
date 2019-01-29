@@ -18,6 +18,8 @@ int64 maxVisitedPos = 0;
 int64 maxExaminedPos = 0;
 int64 visitedOffset = 0;
 
+#define USE_MOVE_LOOKUP_TABLE
+
 // Adapted from the explanation on https://codegolf.stackexchange.com/a/179158
 // see also https://math.stackexchange.com/a/2639611/293996
 int64 coordToPos(int64 x, int64 y)
@@ -61,6 +63,7 @@ int main(int argc, char *argv[])
 
     int64 pos=0, x=0, y=0;
 
+#ifdef USE_MOVE_LOOKUP_TABLE
     struct {char x; char y;} moves[] =
     {
         {-3,-1},
@@ -80,6 +83,7 @@ int main(int argc, char *argv[])
         { 3,-1},
         { 3, 1},
     };
+#endif
 
     for (Uint64 numSteps=1;; numSteps++)
     {
@@ -105,11 +109,23 @@ int main(int argc, char *argv[])
         int64 bestMove = LLONG_MAX;
         int64 bestMove_x;
         int64 bestMove_y;
+#ifdef USE_MOVE_LOOKUP_TABLE
         for (Uint i=0; i<countof(moves); i++)
+#else
+        for (int i=0; i<16; i++)
+#endif
         {
             int64 pos1;
+#ifdef USE_MOVE_LOOKUP_TABLE
             int64 x1 = x + moves[i].x;
             int64 y1 = y + moves[i].y;
+#else
+            char move[2];
+            move[    i / 8] = (i & 2) - 1;
+            move[1 - i / 8] = (i & 4) - 2 + (((i & 4) / 2 - 1) & -(i & 1));
+            int64 x1 = x + move[0];
+            int64 y1 = y + move[1];
+#endif
             pos1 = coordToPos(x1, y1);
             int64 arrayPos = (pos1 >> 3) - visitedOffset;
             if (arrayPos >= visitedArraySize)
