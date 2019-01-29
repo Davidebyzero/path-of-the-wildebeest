@@ -15,7 +15,6 @@ typedef unsigned int  Uint;
 const Uint64 maxPositions = 1000000000uLL; // you may need to make this bigger if you change the problem parameters
 Uchar *visited;
 int64 maxVisitedPos = 0;
-int64 maxExaminedPos = 0;
 int64 visitedOffset = 0;
 
 #define USE_MOVE_LOOKUP_TABLE
@@ -53,6 +52,18 @@ void writeVisitedToFile()
     fclose(f);
 }
 
+void pruneVisitedArray()
+{
+    int64 prePruneVisitedSize = ((maxVisitedPos >> 3) + 1) - visitedOffset;
+    int64 pruneOffset=0;
+    for (; pruneOffset < prePruneVisitedSize; pruneOffset++)
+        if (visited[pruneOffset] != (Uchar)~0)
+            break;
+    memmove(visited, visited + pruneOffset, prePruneVisitedSize - pruneOffset);
+    visitedOffset += pruneOffset;
+    memset(visited + (prePruneVisitedSize - pruneOffset), 0, pruneOffset);
+}
+
 int main(int argc, char *argv[])
 {
     fputs("Initializing...", stdout); fflush(stdout);
@@ -87,27 +98,23 @@ int main(int argc, char *argv[])
 
     for (Uint64 numSteps=1;; numSteps++)
     {
-        visited[(pos >> 3) - visitedOffset] |= 1 << (pos & (8-1));
+        int64 newVisitOffset = (pos >> 3) - visitedOffset;
+        if (newVisitOffset >= visitedArraySize)
+        {
+            pruneVisitedArray();
+
+            newVisitOffset = (pos >> 3) - visitedOffset;
+            if (newVisitOffset >= visitedArraySize)
+            {
+                printf("Reached position %lld (pruned to %lld; max previously visited: %lld); this exceeds allocated array\n", pos+1, visitedOffset << 3, maxVisitedPos+1);
+                goto out_of_memory;
+            }
+        }
+        visited[newVisitOffset] |= 1 << (pos & (8-1));
         if (maxVisitedPos < pos)
             maxVisitedPos = pos;
-        if (maxExaminedPos < pos)
-            maxExaminedPos = pos;
         if ((numSteps & 0xFFFFF) == 0)
-        {
-            int64 prePruneVisitedSize = ((maxVisitedPos >> 3) + 1) - visitedOffset;
-            if (prePruneVisitedSize >= (visitedArraySize >> 1))
-            {
-                int64 pruneOffset=0;
-                for (; pruneOffset < prePruneVisitedSize; pruneOffset++)
-                    if (visited[pruneOffset] != (Uchar)~0)
-                        break;
-                numSteps=numSteps;
-                memmove(visited, visited + pruneOffset, prePruneVisitedSize - pruneOffset);
-                visitedOffset += pruneOffset;
-                memset(visited + (prePruneVisitedSize - pruneOffset), 0, pruneOffset);
-            }
             printf("Step %llu: Position %lld (max: %lld); pruned to %lld\n", numSteps, pos+1, maxVisitedPos+1, visitedOffset << 3);
-        }
         int64 bestMove = LLONG_MAX;
         int64 bestMove_x;
         int64 bestMove_y;
@@ -130,14 +137,7 @@ int main(int argc, char *argv[])
 #endif
             pos1 = coordToPos(x1, y1);
             int64 arrayPos = (pos1 >> 3) - visitedOffset;
-            if (arrayPos >= visitedArraySize)
-            {
-                printf("Reached position %lld (max visited: %lld); considering going to %lld but this exceeds allocated array\n", pos+1, maxVisitedPos+1, pos1+1);
-                goto out_of_memory;
-            }
-            if (maxExaminedPos < pos1)
-                maxExaminedPos = pos1;
-            if (bestMove > pos1 && arrayPos >= 0 && (visited[arrayPos] & (1 << (pos1 & (8-1)))) == 0)
+            if (bestMove > pos1 && arrayPos >= 0 && (arrayPos >= visitedArraySize || (visited[arrayPos] & (1 << (pos1 & (8-1)))) == 0))
             {
                 bestMove = pos1;
                 bestMove_x = x1;
@@ -146,7 +146,8 @@ int main(int argc, char *argv[])
         }
         if (bestMove == LLONG_MAX)
         {
-            printf("Trapped at step %lld at position %lld (max visited: %lld; max examined: %lld)\n", numSteps, pos+1, maxVisitedPos+1, maxExaminedPos+1);
+            printf("Trapped at step %lld at position %lld (max visited: %lld)\n", numSteps, pos+1, maxVisitedPos+1);
+            pruneVisitedArray();
             break;
         }
         pos = bestMove;
