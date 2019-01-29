@@ -99,10 +99,10 @@ int main(int argc, char *argv[])
                 if (visited[pruneOffset] != (Uchar)~0)
                     break;
             numSteps=numSteps;
-            memmove(visited, visited + pruneOffset, ((maxVisitedPos >> 3) + 1) - visitedOffset - pruneOffset);
+            int64 prePruneVisitedSize = ((maxVisitedPos >> 3) + 1) - visitedOffset;
+            memmove(visited, visited + pruneOffset, prePruneVisitedSize - pruneOffset);
             visitedOffset += pruneOffset;
-            int64 eraseOffset = ((maxVisitedPos >> 3) + 1) - visitedOffset;
-            memset(visited + eraseOffset, 0, visitedArraySize - eraseOffset);
+            memset(visited + (prePruneVisitedSize - pruneOffset), 0, pruneOffset);
 
             printf("Step %llu: Position %lld (max: %lld); pruned to %lld\n", numSteps, pos+1, maxVisitedPos+1, visitedOffset << 3);
         }
