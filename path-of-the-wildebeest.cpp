@@ -12,10 +12,11 @@ typedef unsigned int  Uint;
 #define countof(a) sizeof(a) / sizeof(a[0])
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
-const Uint64 maxPositions = 12951523532uLL; // make this bigger if you want to change the problem parameters and see what happens
+const Uint64 maxPositions = 1000000000uLL; // you may need to make this bigger if you change the problem parameters
 Uchar *visited;
 int64 maxVisitedPos = 0;
 int64 maxExaminedPos = 0;
+int64 visitedOffset = 0;
 
 // Adapted from the explanation on https://codegolf.stackexchange.com/a/179158
 // see also https://math.stackexchange.com/a/2639611/293996
@@ -28,8 +29,10 @@ int64 coordToPos(int64 x, int64 y)
 
 void writeVisitedToFile()
 {
-    FILE *f = fopen("path-of-the-wildebeest.bin", "wb");
-    size_t size = ((maxVisitedPos+1 - 1) >> 3) + 1;
+    char filename[500];
+    sprintf(filename, "path-of-the-wildebeest_offset_%d_bytes.bin", visitedOffset);
+    FILE *f = fopen(filename, "wb");
+    size_t size = ((maxVisitedPos >> 3) + 1) - visitedOffset;
     Uchar *p = visited;
     for (;;)
     {
@@ -51,8 +54,9 @@ void writeVisitedToFile()
 int main(int argc, char *argv[])
 {
     fputs("Initializing...", stdout); fflush(stdout);
-    visited = (Uchar*)malloc(((maxPositions - 1) >> 3) + 1);
-    memset(visited, 0, maxPositions / 8);
+    int64 visitedArraySize = ((maxPositions - 1) >> 3) + 1;
+    visited = (Uchar*)malloc(visitedArraySize);
+    memset(visited, 0, visitedArraySize);
     putchar('\n');
 
     int64 pos=0, x=0, y=0;
@@ -79,13 +83,25 @@ int main(int argc, char *argv[])
 
     for (Uint64 numSteps=1;; numSteps++)
     {
-        visited[pos >> 3] |= 1 << (pos & (8-1));
+        visited[(pos >> 3) - visitedOffset] |= 1 << (pos & (8-1));
         if (maxVisitedPos < pos)
             maxVisitedPos = pos;
         if (maxExaminedPos < pos)
             maxExaminedPos = pos;
         if ((numSteps & 0xFFFFF) == 0)
-            printf("Step %llu: Position %lld (max: %lld)\n", numSteps, pos+1, maxVisitedPos+1);
+        {
+            int64 pruneOffset=0;
+            for (; pruneOffset<(maxVisitedPos>>3)-visitedOffset; pruneOffset++)
+                if (visited[pruneOffset] != (Uchar)~0)
+                    break;
+            numSteps=numSteps;
+            memmove(visited, visited + pruneOffset, ((maxVisitedPos >> 3) + 1) - visitedOffset - pruneOffset);
+            visitedOffset += pruneOffset;
+            int64 eraseOffset = ((maxVisitedPos >> 3) + 1) - visitedOffset;
+            memset(visited + eraseOffset, 0, visitedArraySize - eraseOffset);
+
+            printf("Step %llu: Position %lld (max: %lld); pruned to %lld\n", numSteps, pos+1, maxVisitedPos+1, visitedOffset << 3);
+        }
         int64 bestMove = LLONG_MAX;
         int64 bestMove_x;
         int64 bestMove_y;
@@ -95,14 +111,15 @@ int main(int argc, char *argv[])
             int64 x1 = x + moves[i].x;
             int64 y1 = y + moves[i].y;
             pos1 = coordToPos(x1, y1);
-            if (pos1 >= maxPositions)
+            int64 arrayPos = (pos1 >> 3) - visitedOffset;
+            if (arrayPos >= visitedArraySize)
             {
                 printf("Reached position %lld (max visited: %lld); considering going to %lld but this exceeds allocated array\n", pos+1, maxVisitedPos+1, pos1+1);
                 goto out_of_memory;
             }
             if (maxExaminedPos < pos1)
                 maxExaminedPos = pos1;
-            if (bestMove > pos1 && (visited[pos1 >> 3] & (1 << (pos1 & (8-1)))) == 0)
+            if (bestMove > pos1 && arrayPos >= 0 && (visited[arrayPos] & (1 << (pos1 & (8-1)))) == 0)
             {
                 bestMove = pos1;
                 bestMove_x = x1;
