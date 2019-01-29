@@ -146,8 +146,8 @@ int main(int argc, char *argv[])
         }
         if (bestMove == LLONG_MAX)
         {
-            printf("Trapped at step %lld at position %lld (max visited: %lld)\n", numSteps, pos+1, maxVisitedPos+1);
             pruneVisitedArray();
+            printf("Trapped at step %lld at position %lld (pruned to %lld; max visited: %lld)\n", numSteps, pos+1, visitedOffset << 3, maxVisitedPos+1);
             break;
         }
         pos = bestMove;
