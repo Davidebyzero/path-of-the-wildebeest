@@ -94,16 +94,18 @@ int main(int argc, char *argv[])
             maxExaminedPos = pos;
         if ((numSteps & 0xFFFFF) == 0)
         {
-            int64 pruneOffset=0;
-            for (; pruneOffset<(maxVisitedPos>>3)-visitedOffset; pruneOffset++)
-                if (visited[pruneOffset] != (Uchar)~0)
-                    break;
-            numSteps=numSteps;
             int64 prePruneVisitedSize = ((maxVisitedPos >> 3) + 1) - visitedOffset;
-            memmove(visited, visited + pruneOffset, prePruneVisitedSize - pruneOffset);
-            visitedOffset += pruneOffset;
-            memset(visited + (prePruneVisitedSize - pruneOffset), 0, pruneOffset);
-
+            if (prePruneVisitedSize >= (visitedArraySize >> 1))
+            {
+                int64 pruneOffset=0;
+                for (; pruneOffset < prePruneVisitedSize; pruneOffset++)
+                    if (visited[pruneOffset] != (Uchar)~0)
+                        break;
+                numSteps=numSteps;
+                memmove(visited, visited + pruneOffset, prePruneVisitedSize - pruneOffset);
+                visitedOffset += pruneOffset;
+                memset(visited + (prePruneVisitedSize - pruneOffset), 0, pruneOffset);
+            }
             printf("Step %llu: Position %lld (max: %lld); pruned to %lld\n", numSteps, pos+1, maxVisitedPos+1, visitedOffset << 3);
         }
         int64 bestMove = LLONG_MAX;
