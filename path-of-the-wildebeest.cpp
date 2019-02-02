@@ -31,7 +31,7 @@ int64 coordToPos(int64 x, int64 y)
 void writeVisitedToFile()
 {
     char filename[500];
-    sprintf(filename, "path-of-the-wildebeest_offset_%d_bytes.bin", visitedOffset);
+    sprintf(filename, "path-of-the-wilderebeest_offset_%lld_bytes.bin", visitedOffset);
     FILE *f = fopen(filename, "wb");
     size_t size = ((maxVisitedPos >> 3) + 1) - visitedOffset;
     Uchar *p = visited;
